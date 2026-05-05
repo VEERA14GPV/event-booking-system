@@ -15,10 +15,16 @@ public class SeatService {
     private SeatRepository seatRepository;
 
     public List<Seat> getSeatsByShow(Long showId) {
+        if (showId == null) {
+            throw new RuntimeException("Show ID cannot be null");
+        }
         return seatRepository.findByShowId(showId);
     }
 
     public List<Seat> saveAllSeats(List<Seat> seats) {
+        if (seats == null || seats.isEmpty()) {
+            throw new RuntimeException("Seat list cannot be empty");
+        }
         return seatRepository.saveAll(seats);
     }
 }

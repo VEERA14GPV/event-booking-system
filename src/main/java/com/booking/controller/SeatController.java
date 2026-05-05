@@ -20,9 +20,4 @@ public class SeatController {
         return seatService.getSeatsByShow(showId);
     }
 
-    // Optional: create seats manually
-    @PostMapping
-    public List<Seat> createSeats(@RequestBody List<Seat> seats) {
-        return seatService.saveAllSeats(seats);
-    }
 }

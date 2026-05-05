@@ -18,14 +18,40 @@ public class Seat {
     @Enumerated(EnumType.STRING)
     private SeatStatus status;
 
-    // getters & setters
-    public Long getId() { return id; }
-    public String getSeatNumber() { return seatNumber; }
-    public Show getShow() { return show; }
-    public SeatStatus getStatus() { return status; }
 
-    public void setId(Long id) { this.id = id; }
-    public void setSeatNumber(String seatNumber) { this.seatNumber = seatNumber; }
-    public void setShow(Show show) { this.show = show; }
-    public void setStatus(SeatStatus status) { this.status = status; }
+    public Long getId() 
+    {
+    	return id;
+    }
+    public String getSeatNumber() 
+    {
+    	return seatNumber;
+    }
+    public Show getShow() 
+    {
+    	return show;
+    }
+    public SeatStatus getStatus() 
+    {
+    	return status;
+    }
+
+    
+    
+    public void setId(Long id) 
+    {
+    	this.id = id;
+    }
+    public void setSeatNumber(String seatNumber) 
+    {
+    	this.seatNumber = seatNumber;
+    }
+    public void setShow(Show show) 
+    {
+    	this.show = show; 
+    }
+    public void setStatus(SeatStatus status) 
+    {
+    	this.status = status; 
+    }
 }

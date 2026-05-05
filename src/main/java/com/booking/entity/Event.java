@@ -17,14 +17,37 @@ public class Event {
 
     private Integer duration;
 
-    // getters & setters
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public EventType getType() { return type; }
-    public Integer getDuration() { return duration; }
+    public Long getId() 
+    {
+    	return id;
+    }
+    public String getName() 
+    {
+    	return name;
+    }
+    public EventType getType() 
+    {
+    	return type;
+    }
+    public Integer getDuration() 
+    {
+    	return duration;
+    }
 
-    public void setId(Long id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setType(EventType type) { this.type = type; }
-    public void setDuration(Integer duration) { this.duration = duration; }
+    public void setId(Long id) 
+    {
+    	this.id = id;
+    }
+    public void setName(String name) 
+    {
+    	this.name = name;
+    }
+    public void setType(EventType type) 
+    {
+    	this.type = type;
+    }
+    public void setDuration(Integer duration) 
+    {
+    	this.duration = duration; 
+    }
 }

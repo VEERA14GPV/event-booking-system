@@ -16,12 +16,32 @@ public class Show {
 
     private LocalDateTime startTime;
 
-    // getters & setters
-    public Long getId() { return id; }
-    public Event getEvent() { return event; }
-    public LocalDateTime getStartTime() { return startTime; }
 
-    public void setId(Long id) { this.id = id; }
-    public void setEvent(Event event) { this.event = event; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public Long getId() 
+    {
+    	return id; 
+    }
+    public Event getEvent()
+    {
+    	return event;
+    }
+    public LocalDateTime getStartTime() 
+    {
+    	return startTime; 
+    }
+    
+    
+
+    public void setId(Long id) 
+    {
+    	this.id = id;
+    }
+    public void setEvent(Event event) 
+    {
+    	this.event = event;
+    }
+    public void setStartTime(LocalDateTime startTime) 
+    {
+    	this.startTime = startTime;
+    }
 }
