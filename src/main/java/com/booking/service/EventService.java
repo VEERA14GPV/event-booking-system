@@ -1,29 +1,52 @@
 package com.booking.service;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.booking.entity.Event;
 import com.booking.enums.EventType;
 import com.booking.repository.EventRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import org.springframework.stereotype.Service;
+
 @Service
 public class EventService {
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
+
+    public EventService(
+            EventRepository eventRepository) {
+
+        this.eventRepository = eventRepository;
+    }
 
     public Event createEvent(Event event) {
+
         return eventRepository.save(event);
     }
 
-    public List<Event> getAllEvents() {
-        return eventRepository.findAll();
+    public Page<Event> getAllEvents(
+            int page,
+            int size) {
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        return eventRepository.findAll(pageable);
     }
 
-    public List<Event> getEventsByType(EventType type) {
-        return eventRepository.findByType(type);
+    public Page<Event> getEventsByType(
+            EventType type,
+            int page,
+            int size) {
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        return eventRepository.findByType(
+                type,
+                pageable
+        );
     }
 }

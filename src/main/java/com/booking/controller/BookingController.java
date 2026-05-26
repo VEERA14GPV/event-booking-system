@@ -1,40 +1,58 @@
 package com.booking.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import com.booking.dto.BookingRequest;
-import com.booking.dto.BookingResponse;
-import com.booking.entity.Booking;
+import com.booking.dto.request.BookingRequest;
+import com.booking.dto.response.BookingResponse;
 import com.booking.service.BookingService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/bookings")
+@RequiredArgsConstructor
 public class BookingController {
 
-    @Autowired
-    private BookingService bookingService;
+    private final BookingService bookingService;
 
     @PostMapping
-    public BookingResponse createBooking(@RequestBody BookingRequest request) {
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<BookingResponse> createBooking(
+            @Valid @RequestBody BookingRequest request) {
 
-        Booking booking = bookingService.createBooking(
-                request.getUserId(),
-                request.getShowId(),
-                request.getSeatIds()
-        );
-
-        return new BookingResponse(
-                booking.getId(),
-                booking.getUserId(),
-                booking.getShow().getId(),
-                request.getSeatIds(),
-                booking.getStatus().name()
-        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(bookingService.createBooking(request));
     }
 
-    @GetMapping("/{id}")
-    public Booking getBooking(@PathVariable Long id) {
-        return bookingService.getBookingById(id);
+    @GetMapping("/{bookingId}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<BookingResponse> getBooking(
+            @PathVariable Long bookingId) {
+
+        return ResponseEntity.ok(
+                bookingService.getBookingById(bookingId));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<BookingResponse>> getAllBookings(
+            Pageable pageable) {
+
+        return ResponseEntity.ok(
+                bookingService.getAllBookings(pageable));
+    }
+
+    @DeleteMapping("/{bookingId}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<String> cancelBooking(
+            @PathVariable Long bookingId) {
+
+        bookingService.cancelBooking(bookingId);
+
+        return ResponseEntity.ok("Booking cancelled successfully");
     }
 }

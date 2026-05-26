@@ -1,13 +1,19 @@
 package com.booking.repository;
 
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.booking.entity.Event;
 import com.booking.enums.EventType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.stereotype.Repository;
 
-public interface EventRepository extends JpaRepository<Event, Long> {
+@Repository
+public interface EventRepository
+        extends JpaRepository<Event, Long>,
+        JpaSpecificationExecutor<Event> {
 
-    List<Event> findByType(EventType type);
+    Page<Event> findByType(
+            EventType type,
+            Pageable pageable
+    );
 }

@@ -1,83 +1,165 @@
 package com.booking.service;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.booking.dto.request.BookingRequest;
+import com.booking.dto.response.BookingResponse;
 
 import com.booking.entity.Booking;
 import com.booking.entity.BookingSeat;
 import com.booking.entity.Seat;
 import com.booking.entity.Show;
+
 import com.booking.enums.BookingStatus;
 import com.booking.enums.SeatStatus;
+
+import com.booking.exception.ResourceNotFoundException;
+import com.booking.exception.SeatUnavailableException;
+
+import com.booking.locking.RedisDistributedLockService;
+
 import com.booking.repository.BookingRepository;
 import com.booking.repository.BookingSeatRepository;
 import com.booking.repository.SeatRepository;
 import com.booking.repository.ShowRepository;
 
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 public class BookingService {
 
-    @Autowired
-    private SeatRepository seatRepository;
+    private final BookingRepository bookingRepository;
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    private final SeatRepository seatRepository;
 
-    @Autowired
-    private BookingSeatRepository bookingSeatRepository;
+    private final ShowRepository showRepository;
 
-    @Autowired
-    private ShowRepository showRepository;
+    private final BookingSeatRepository bookingSeatRepository;
 
-    public Booking createBooking(Long userId, Long showId, List<Long> seatIds) {
+    private final RedisDistributedLockService lockService;
 
-        // 1. Fetch show
-        Show show = showRepository.findById(showId)
-                .orElseThrow(() -> new RuntimeException("Show not found"));
+    public BookingService(
+            BookingRepository bookingRepository,
+            SeatRepository seatRepository,
+            ShowRepository showRepository,
+            BookingSeatRepository bookingSeatRepository,
+            RedisDistributedLockService lockService) {
 
-        // 2. Fetch seats
-        List<Seat> seats = seatRepository.findAllById(seatIds);
-
-        if (seats.size() != seatIds.size()) {
-            throw new RuntimeException("Invalid seat IDs");
-        }
-
-        // 3. Validate seat availability
-        for (Seat seat : seats) {
-            if (seat.getStatus() != SeatStatus.AVAILABLE) {
-                throw new RuntimeException("Seat already booked: " + seat.getSeatNumber());
-            }
-        }
-
-        // 4. Mark seats as BOOKED
-        for (Seat seat : seats) {
-            seat.setStatus(SeatStatus.BOOKED);
-        }
-        seatRepository.saveAll(seats);
-
-        // 5. Create booking
-        Booking booking = new Booking();
-        booking.setUserId(userId);
-        booking.setShow(show);
-        booking.setStatus(BookingStatus.CONFIRMED);
-
-        booking = bookingRepository.save(booking);
-
-        // 6. Map booking to seats
-        for (Seat seat : seats) {
-            BookingSeat bs = new BookingSeat();
-            bs.setBooking(booking);
-            bs.setSeat(seat);
-            bookingSeatRepository.save(bs);
-        }
-
-        return booking;
+        this.bookingRepository = bookingRepository;
+        this.seatRepository = seatRepository;
+        this.showRepository = showRepository;
+        this.bookingSeatRepository = bookingSeatRepository;
+        this.lockService = lockService;
     }
 
-    public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+    public BookingResponse createBooking(
+            BookingRequest request) {
+
+        Show show = showRepository.findById(
+                request.getShowId()
+        ).orElseThrow(() ->
+                new ResourceNotFoundException(
+                        "Show not found"
+                )
+        );
+
+        for (Long seatId : request.getSeatIds()) {
+
+            Seat seat = seatRepository.findById(seatId)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Seat not found"
+                            )
+                    );
+
+            if (seat.getStatus() != SeatStatus.AVAILABLE) {
+
+                throw new SeatUnavailableException(
+                        "Seat already booked or locked"
+                );
+            }
+
+            boolean locked = lockService.lockSeat(
+                    seatId,
+                    request.getUserId()
+            );
+
+            if (!locked) {
+
+                throw new SeatUnavailableException(
+                        "Seat is currently locked"
+                );
+            }
+
+            seat.setStatus(SeatStatus.LOCKED);
+
+            seatRepository.save(seat);
+        }
+
+        Booking booking = new Booking();
+
+        booking.setUserId(request.getUserId());
+        booking.setShow(show);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setBookingTime(LocalDateTime.now());
+
+        Booking savedBooking =
+                bookingRepository.save(booking);
+
+        for (Long seatId : request.getSeatIds()) {
+
+            Seat seat = seatRepository.findById(seatId)
+                    .orElseThrow();
+
+            BookingSeat bookingSeat =
+                    new BookingSeat();
+
+            bookingSeat.setBooking(savedBooking);
+            bookingSeat.setSeat(seat);
+
+            bookingSeatRepository.save(bookingSeat);
+        }
+
+        return new BookingResponse(
+                savedBooking.getId(),
+                savedBooking.getUserId(),
+                show.getId(),
+                request.getSeatIds(),
+                savedBooking.getStatus().name()
+        );
+    }
+
+    public BookingResponse getBooking(
+            Long bookingId) {
+
+        Booking booking =
+                bookingRepository.findById(bookingId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Booking not found"
+                                )
+                        );
+
+        List<Long> seatIds =
+                bookingSeatRepository.findAll()
+                        .stream()
+                        .filter(bs ->
+                                bs.getBooking()
+                                        .getId()
+                                        .equals(bookingId)
+                        )
+                        .map(bs ->
+                                bs.getSeat().getId()
+                        )
+                        .toList();
+
+        return new BookingResponse(
+                booking.getId(),
+                booking.getUserId(),
+                booking.getShow().getId(),
+                seatIds,
+                booking.getStatus().name()
+        );
     }
 }
