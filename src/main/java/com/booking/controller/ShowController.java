@@ -1,32 +1,42 @@
 package com.booking.controller;
 
-import java.util.List;
+import com.booking.entity.Show;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.booking.service.ShowService;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
-import com.booking.entity.Show;
-import com.booking.service.ShowService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/shows")
+@RequiredArgsConstructor
 public class ShowController {
 
-    @Autowired
-    private ShowService showService;
-
-    @PostMapping
-    public Show createShow(@RequestBody Show show) {
-        return showService.createShow(show);
-    }
+    private final ShowService showService;
 
     @GetMapping
-    public List<Show> getAllShows() {
-        return showService.getAllShows();
+    public ResponseEntity<List<Show>>
+    getAllShows() {
+
+        return ResponseEntity.ok(
+                showService.getAllShows()
+        );
     }
 
-    @GetMapping("/event/{eventId}")
-    public List<Show> getShowsByEvent(@PathVariable Long eventId) {
-        return showService.getShowsByEvent(eventId);
+    @GetMapping("/{showId}")
+    public ResponseEntity<Show>
+    getShowById(@PathVariable Long showId) {
+
+        return ResponseEntity.ok(
+
+                showService.getShowById(
+                        showId
+                )
+        );
     }
 }

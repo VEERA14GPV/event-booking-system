@@ -1,9 +1,11 @@
 package com.booking.service;
 
 import com.booking.dto.request.PaymentRequest;
+
 import com.booking.dto.response.PaymentResponse;
 
 import com.booking.entity.Booking;
+import com.booking.entity.BookingSeat;
 import com.booking.entity.Payment;
 import com.booking.entity.Seat;
 
@@ -23,6 +25,7 @@ import com.booking.repository.SeatRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+
 import java.util.List;
 
 @Service
@@ -38,27 +41,47 @@ public class PaymentService {
 
     private final RazorpayService razorpayService;
 
+    private final SeatLockService seatLockService;
+
     public PaymentService(
             PaymentRepository paymentRepository,
             BookingRepository bookingRepository,
             BookingSeatRepository bookingSeatRepository,
             SeatRepository seatRepository,
-            RazorpayService razorpayService) {
+            RazorpayService razorpayService,
+            SeatLockService seatLockService) {
 
-        this.paymentRepository = paymentRepository;
-        this.bookingRepository = bookingRepository;
-        this.bookingSeatRepository = bookingSeatRepository;
-        this.seatRepository = seatRepository;
-        this.razorpayService = razorpayService;
+        this.paymentRepository =
+                paymentRepository;
+
+        this.bookingRepository =
+                bookingRepository;
+
+        this.bookingSeatRepository =
+                bookingSeatRepository;
+
+        this.seatRepository =
+                seatRepository;
+
+        this.razorpayService =
+                razorpayService;
+
+        this.seatLockService =
+                seatLockService;
     }
 
+    /*
+     * Process payment
+     */
     public PaymentResponse processPayment(
             PaymentRequest request) {
 
         Booking booking =
                 bookingRepository.findById(
                         request.getBookingId()
-                ).orElseThrow(() ->
+                )
+                .orElseThrow(() ->
+
                         new ResourceNotFoundException(
                                 "Booking not found"
                         )
@@ -71,61 +94,156 @@ public class PaymentService {
 
         Payment payment = new Payment();
 
-        payment.setAmount(request.getAmount());
-
-        payment.setTransactionId(
-                razorpayService.createTransactionId()
+        payment.setAmount(
+                request.getAmount()
         );
 
-        payment.setBooking(booking);
+        payment.setBooking(
+                booking
+        );
 
-        payment.setPaymentTime(LocalDateTime.now());
+        payment.setTransactionId(
+                razorpayService
+                        .createTransactionId()
+        );
+
+        payment.setPaymentTime(
+                LocalDateTime.now()
+        );
+
+        List<BookingSeat> bookingSeats =
+                bookingSeatRepository
+                        .findByBookingId(
+                                booking.getId()
+                        );
 
         if (paymentSuccess) {
 
-            payment.setStatus(PaymentStatus.SUCCESS);
+            payment.setStatus(
+                    PaymentStatus.SUCCESS
+            );
 
             booking.setStatus(
                     BookingStatus.CONFIRMED
             );
 
-            List<Seat> seats =
-                    bookingSeatRepository.findAll()
-                            .stream()
-                            .filter(bs ->
-                                    bs.getBooking()
-                                            .getId()
-                                            .equals(booking.getId())
-                            )
-                            .map(bs -> bs.getSeat())
-                            .toList();
+            for (BookingSeat bookingSeat :
+                    bookingSeats) {
 
-            for (Seat seat : seats) {
+                Seat seat =
+                        bookingSeat.getSeat();
 
-                seat.setStatus(SeatStatus.BOOKED);
+                seat.setStatus(
+                        SeatStatus.BOOKED
+                );
 
                 seatRepository.save(seat);
+
+                seatLockService.unlockSeat(
+                        booking.getShow().getId(),
+                        seat.getId()
+                );
             }
 
         } else {
 
-            payment.setStatus(PaymentStatus.FAILED);
+            payment.setStatus(
+                    PaymentStatus.FAILED
+            );
 
             booking.setStatus(
                     BookingStatus.FAILED
             );
+
+            for (BookingSeat bookingSeat :
+                    bookingSeats) {
+
+                Seat seat =
+                        bookingSeat.getSeat();
+
+                seat.setStatus(
+                        SeatStatus.AVAILABLE
+                );
+
+                seatRepository.save(seat);
+
+                seatLockService.unlockSeat(
+                        booking.getShow().getId(),
+                        seat.getId()
+                );
+            }
         }
 
-        bookingRepository.save(booking);
+        bookingRepository.save(
+                booking
+        );
 
         Payment savedPayment =
-                paymentRepository.save(payment);
+                paymentRepository.save(
+                        payment
+                );
 
-        return new PaymentResponse(
-                savedPayment.getId(),
-                savedPayment.getTransactionId(),
-                savedPayment.getAmount(),
-                savedPayment.getStatus().name()
+        return mapToResponse(
+                savedPayment
         );
+    }
+
+    /*
+     * Get payment by ID
+     */
+    public PaymentResponse getPaymentById(
+            Long paymentId) {
+
+        Payment payment =
+                paymentRepository.findById(
+                        paymentId
+                )
+                .orElseThrow(() ->
+
+                        new ResourceNotFoundException(
+                                "Payment not found"
+                        )
+                );
+
+        return mapToResponse(
+                payment
+        );
+    }
+
+    /*
+     * Entity -> Response
+     */
+    private PaymentResponse mapToResponse(
+            Payment payment) {
+
+        PaymentResponse response =
+                new PaymentResponse();
+
+        response.setPaymentId(
+                payment.getId()
+        );
+
+        response.setBookingId(
+                payment.getBooking()
+                        .getId()
+        );
+
+        response.setTransactionId(
+                payment.getTransactionId()
+        );
+
+        response.setAmount(
+                payment.getAmount()
+        );
+
+        response.setPaymentStatus(
+                payment.getStatus()
+        );
+
+        response.setPaymentTime(
+                payment.getPaymentTime()
+        );
+
+        return response;
     }
 }

@@ -2,28 +2,30 @@ package com.booking.util;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class IdempotencyUtil {
 
-    private final Set<String> processedKeys =
-            ConcurrentHashMap.newKeySet();
-
+    /*
+     * Generate unique idempotency key
+     */
     public String generateKey() {
 
-        return UUID.randomUUID().toString();
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .toUpperCase();
     }
 
-    public boolean isDuplicate(String key) {
+    /*
+     * Validate idempotency key
+     */
+    public boolean isValidKey(
+            String key) {
 
-        return processedKeys.contains(key);
-    }
-
-    public void markProcessed(String key) {
-
-        processedKeys.add(key);
+        return key != null
+                && !key.isBlank()
+                && key.length() >= 16;
     }
 }

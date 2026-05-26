@@ -1,6 +1,7 @@
 package com.booking.entity;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,36 +13,42 @@ public class Show {
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "event_id")
     private Event event;
 
     private LocalDateTime startTime;
 
+    private Double price;
 
-    public Long getId() 
-    {
-    	return id; 
+    public Long getId() {
+        return id;
     }
-    public Event getEvent()
-    {
-    	return event;
-    }
-    public LocalDateTime getStartTime() 
-    {
-    	return startTime; 
-    }
-    
-    
 
-    public void setId(Long id) 
-    {
-    	this.id = id;
+    public void setId(Long id) {
+        this.id = id;
     }
-    public void setEvent(Event event) 
-    {
-    	this.event = event;
+
+    public Event getEvent() {
+        return event;
     }
-    public void setStartTime(LocalDateTime startTime) 
-    {
-    	this.startTime = startTime;
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 }

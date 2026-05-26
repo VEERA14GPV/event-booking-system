@@ -1,30 +1,94 @@
 package com.booking.service;
 
-import java.util.List;
+import com.booking.entity.Seat;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.booking.enums.SeatStatus;
+
+import com.booking.exception.ResourceNotFoundException;
+
+import com.booking.repository.SeatRepository;
+
 import org.springframework.stereotype.Service;
 
-import com.booking.entity.Seat;
-import com.booking.repository.SeatRepository;
+import java.util.List;
 
 @Service
 public class SeatService {
 
-    @Autowired
-    private SeatRepository seatRepository;
+    private final SeatRepository seatRepository;
 
-    public List<Seat> getSeatsByShow(Long showId) {
-        if (showId == null) {
-            throw new RuntimeException("Show ID cannot be null");
-        }
-        return seatRepository.findByShowId(showId);
+    public SeatService(
+            SeatRepository seatRepository) {
+
+        this.seatRepository =
+                seatRepository;
     }
 
-    public List<Seat> saveAllSeats(List<Seat> seats) {
-        if (seats == null || seats.isEmpty()) {
-            throw new RuntimeException("Seat list cannot be empty");
-        }
-        return seatRepository.saveAll(seats);
+    /*
+     * Get seats by show
+     */
+    public List<Seat> getSeatsByShow(
+            Long showId) {
+
+        return seatRepository.findByShowId(
+                showId
+        );
+    }
+
+    /*
+     * Get available seats
+     */
+    public List<Seat> getAvailableSeats(
+            Long showId) {
+
+        return seatRepository
+                .findByShowIdAndStatus(
+                        showId,
+                        SeatStatus.AVAILABLE
+                );
+    }
+
+    /*
+     * Get seat by ID
+     */
+    public Seat getSeatById(
+            Long seatId) {
+
+        return seatRepository.findById(
+                seatId
+        )
+        .orElseThrow(() ->
+
+                new ResourceNotFoundException(
+                        "Seat not found"
+                )
+        );
+    }
+
+    /*
+     * Create seat
+     */
+    public Seat createSeat(
+            Seat seat) {
+
+        seat.setStatus(
+                SeatStatus.AVAILABLE
+        );
+
+        return seatRepository.save(
+                seat
+        );
+    }
+
+    /*
+     * Delete seat
+     */
+    public void deleteSeat(
+            Long seatId) {
+
+        Seat seat =
+                getSeatById(seatId);
+
+        seatRepository.delete(seat);
     }
 }

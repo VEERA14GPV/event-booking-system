@@ -1,28 +1,72 @@
 package com.booking.service;
 
-import java.util.List;
+import com.booking.entity.Show;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.booking.exception.ResourceNotFoundException;
+
+import com.booking.repository.ShowRepository;
+
 import org.springframework.stereotype.Service;
 
-import com.booking.entity.Show;
-import com.booking.repository.ShowRepository;
+import java.util.List;
 
 @Service
 public class ShowService {
 
-    @Autowired
-    private ShowRepository showRepository;
+    private final ShowRepository showRepository;
 
-    public Show createShow(Show show) {
-        return showRepository.save(show);
+    public ShowService(
+            ShowRepository showRepository) {
+
+        this.showRepository =
+                showRepository;
     }
 
+    /*
+     * Get all shows
+     */
     public List<Show> getAllShows() {
+
         return showRepository.findAll();
     }
 
-    public List<Show> getShowsByEvent(Long eventId) {
-        return showRepository.findByEventId(eventId);
+    /*
+     * Get show by ID
+     */
+    public Show getShowById(
+            Long showId) {
+
+        return showRepository.findById(
+                showId
+        )
+        .orElseThrow(() ->
+
+                new ResourceNotFoundException(
+                        "Show not found"
+                )
+        );
+    }
+
+    /*
+     * Create show
+     */
+    public Show createShow(
+            Show show) {
+
+        return showRepository.save(
+                show
+        );
+    }
+
+    /*
+     * Delete show
+     */
+    public void deleteShow(
+            Long showId) {
+
+        Show show =
+                getShowById(showId);
+
+        showRepository.delete(show);
     }
 }

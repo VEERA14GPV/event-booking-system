@@ -1,8 +1,15 @@
 package com.booking.repository;
 
 import com.booking.entity.BookingSeat;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BookingSeatRepository
-        extends JpaRepository<BookingSeat, Long> {
+import java.util.List;
+
+public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> {
+
+    List<BookingSeat> findByBookingId(Long bookingId);
+
+    List<BookingSeat> findBySeatId(Long seatId);
+    
 }

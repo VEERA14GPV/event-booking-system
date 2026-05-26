@@ -1,5 +1,9 @@
 package com.booking.dto.response;
 
+import com.booking.enums.BookingStatus;
+
+import java.time.LocalDateTime;
+
 import java.util.List;
 
 public class BookingResponse {
@@ -12,21 +16,11 @@ public class BookingResponse {
 
     private List<Long> seatIds;
 
-    private String bookingStatus;
+    private Double totalAmount;
 
-    public BookingResponse(
-            Long bookingId,
-            Long userId,
-            Long showId,
-            List<Long> seatIds,
-            String bookingStatus) {
+    private BookingStatus bookingStatus;
 
-        this.bookingId = bookingId;
-        this.userId = userId;
-        this.showId = showId;
-        this.seatIds = seatIds;
-        this.bookingStatus = bookingStatus;
-    }
+    private LocalDateTime bookedAt;
 
     public BookingResponse() {
     }
@@ -36,7 +30,8 @@ public class BookingResponse {
         return bookingId;
     }
 
-    public void setBookingId(Long bookingId) {
+    public void setBookingId(
+            Long bookingId) {
 
         this.bookingId = bookingId;
     }
@@ -46,7 +41,8 @@ public class BookingResponse {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(
+            Long userId) {
 
         this.userId = userId;
     }
@@ -56,7 +52,8 @@ public class BookingResponse {
         return showId;
     }
 
-    public void setShowId(Long showId) {
+    public void setShowId(
+            Long showId) {
 
         this.showId = showId;
     }
@@ -66,18 +63,42 @@ public class BookingResponse {
         return seatIds;
     }
 
-    public void setSeatIds(List<Long> seatIds) {
+    public void setSeatIds(
+            List<Long> seatIds) {
 
         this.seatIds = seatIds;
     }
 
-    public String getBookingStatus() {
+    public Double getTotalAmount() {
+
+        return totalAmount;
+    }
+
+    public void setTotalAmount(
+            Double totalAmount) {
+
+        this.totalAmount = totalAmount;
+    }
+
+    public BookingStatus getBookingStatus() {
 
         return bookingStatus;
     }
 
-    public void setBookingStatus(String bookingStatus) {
+    public void setBookingStatus(
+            BookingStatus bookingStatus) {
 
         this.bookingStatus = bookingStatus;
+    }
+
+    public LocalDateTime getBookedAt() {
+
+        return bookedAt;
+    }
+
+    public void setBookedAt(
+            LocalDateTime bookedAt) {
+
+        this.bookedAt = bookedAt;
     }
 }

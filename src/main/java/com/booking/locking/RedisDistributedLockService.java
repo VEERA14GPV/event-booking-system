@@ -10,9 +10,6 @@ public class RedisDistributedLockService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    private static final String SEAT_LOCK_PREFIX =
-            "seat_lock:";
-
     public RedisDistributedLockService(
             RedisTemplate<String, Object> redisTemplate) {
 
@@ -20,10 +17,15 @@ public class RedisDistributedLockService {
     }
 
     public boolean lockSeat(
+            Long showId,
             Long seatId,
             Long userId) {
 
-        String key = SEAT_LOCK_PREFIX + seatId;
+        String key =
+                LockKeyGenerator.generateShowSeatLockKey(
+                        showId,
+                        seatId
+                );
 
         Boolean success =
                 redisTemplate.opsForValue()
@@ -36,19 +38,57 @@ public class RedisDistributedLockService {
         return Boolean.TRUE.equals(success);
     }
 
-    public void unlockSeat(Long seatId) {
+    public boolean isSeatLocked(
+            Long showId,
+            Long seatId) {
 
-        String key = SEAT_LOCK_PREFIX + seatId;
-
-        redisTemplate.delete(key);
-    }
-
-    public boolean isSeatLocked(Long seatId) {
-
-        String key = SEAT_LOCK_PREFIX + seatId;
+        String key =
+                LockKeyGenerator.generateShowSeatLockKey(
+                        showId,
+                        seatId
+                );
 
         return Boolean.TRUE.equals(
                 redisTemplate.hasKey(key)
         );
+    }
+
+    public void unlockSeat(
+            Long showId,
+            Long seatId) {
+
+        String key =
+                LockKeyGenerator.generateShowSeatLockKey(
+                        showId,
+                        seatId
+                );
+
+        redisTemplate.delete(key);
+    }
+
+    public Long getRemainingLockTime(
+            Long showId,
+            Long seatId) {
+
+        String key =
+                LockKeyGenerator.generateShowSeatLockKey(
+                        showId,
+                        seatId
+                );
+
+        return redisTemplate.getExpire(key);
+    }
+
+    public Object getLockOwner(
+            Long showId,
+            Long seatId) {
+
+        String key =
+                LockKeyGenerator.generateShowSeatLockKey(
+                        showId,
+                        seatId
+                );
+
+        return redisTemplate.opsForValue().get(key);
     }
 }

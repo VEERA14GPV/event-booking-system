@@ -1,66 +1,124 @@
 package com.booking.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+
 import io.jsonwebtoken.security.Keys;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
+
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    private final String JWT_SECRET =
-            "mySecretKeymySecretKeymySecretKey123456";
+	@Value("${app.jwt.secret}")
+	private String jwtSecret;
 
-    private final long JWT_EXPIRATION = 86400000;
+	@Value("${app.jwt.expiration}")
+	private long jwtExpirationDate;
 
-    private final Key key =
-            Keys.hmacShaKeyFor(JWT_SECRET.getBytes());
+    /*
+     * Generate signing key
+     */
+	
+    private SecretKey getSigningKey() {
 
+        return Keys.hmacShaKeyFor(
+
+                jwtSecret.getBytes(
+                        StandardCharsets.UTF_8
+                )
+        );
+    }
+
+    /*
+     * Generate JWT token
+     */
+    
     public String generateToken(
             Authentication authentication) {
 
-        UserPrincipal userPrincipal =
-                (UserPrincipal) authentication.getPrincipal();
+        String username =
+                authentication.getName();
 
-        Date now = new Date();
+        Date currentDate =
+                new Date();
 
-        Date expiryDate =
-                new Date(now.getTime() + JWT_EXPIRATION);
+        Date expireDate =
+                new Date(
+
+                        currentDate.getTime()
+                                + jwtExpirationDate
+                );
 
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
+
+                .subject(username)
+
+                .issuedAt(currentDate)
+
+                .expiration(expireDate)
+
+                .signWith(
+                        getSigningKey()
+                )
+
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    /*
+     * Extract username
+     */
+    
+    public String getUsernameFromToken(
+            String token) {
 
         Claims claims = Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) key)
+
+                .verifyWith(
+                        getSigningKey()
+                )
+
                 .build()
+
                 .parseSignedClaims(token)
+
                 .getPayload();
 
         return claims.getSubject();
     }
 
-    public boolean validateToken(String token) {
+    /*
+     * Validate JWT token
+     */
+    
+    public boolean validateToken(
+            String token) {
 
         try {
 
             Jwts.parser()
-                    .verifyWith((javax.crypto.SecretKey) key)
+
+                    .verifyWith(
+                            getSigningKey()
+                    )
+
                     .build()
+
                     .parseSignedClaims(token);
 
             return true;
 
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (Exception ex) {
 
             return false;
         }

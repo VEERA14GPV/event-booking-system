@@ -1,6 +1,7 @@
 package com.booking.entity;
 
 import com.booking.enums.PaymentStatus;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -30,47 +31,47 @@ public class Payment {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getTransactionId() {
         return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
     }
 
     public Double getAmount() {
         return amount;
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
-
     public PaymentStatus getStatus() {
         return status;
-    }
-
-    public void setStatus(PaymentStatus status) {
-        this.status = status;
     }
 
     public Booking getBooking() {
         return booking;
     }
 
-    public void setBooking(Booking booking) {
-        this.booking = booking;
-    }
-
     public LocalDateTime getPaymentTime() {
         return paymentTime;
     }
 
-    public void setPaymentTime(LocalDateTime paymentTime) {
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
+
+    public void setStatus(PaymentStatus status) {
+          this.status = status;
+    }
+
+    public void setBooking(Booking booking) {
+        this.booking = booking;
+    }
+
+    public void setPaymentTime( LocalDateTime paymentTime) {
         this.paymentTime = paymentTime;
     }
 }

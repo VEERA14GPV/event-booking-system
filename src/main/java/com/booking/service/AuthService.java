@@ -2,6 +2,7 @@ package com.booking.service;
 
 import com.booking.dto.request.LoginRequest;
 import com.booking.dto.request.RegisterRequest;
+
 import com.booking.dto.response.JwtResponse;
 
 import com.booking.entity.Role;
@@ -37,28 +38,38 @@ public class AuthService {
 
     private final RoleRepository roleRepository;
 
+    /*
+     * Register user
+     */
     public String register(
             RegisterRequest request) {
 
         if (userRepository.existsByUsername(
                 request.getUsername())) {
 
-            return "Username already exists";
+            throw new RuntimeException(
+                    "Username already exists"
+            );
         }
 
         if (userRepository.existsByEmail(
                 request.getEmail())) {
 
-            return "Email already exists";
+            throw new RuntimeException(
+                    "Email already exists"
+            );
         }
 
-        Role role = roleRepository.findByName(
-                request.getRole()
-        ).orElseThrow(() ->
-                new RuntimeException(
-                        "Role not found"
+        Role role = roleRepository
+                .findByName(
+                        request.getRole()
                 )
-        );
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "Role not found"
+                        )
+                );
 
         User user = new User();
 
@@ -83,6 +94,9 @@ public class AuthService {
         return "User registered successfully";
     }
 
+    /*
+     * Login user
+     */
     public JwtResponse login(
             LoginRequest request) {
 
@@ -106,21 +120,85 @@ public class AuthService {
         User user =
                 userRepository.findByUsername(
                         request.getUsername()
-                ).orElseThrow(() ->
+                )
+                .orElseThrow(() ->
+
                         new RuntimeException(
                                 "User not found"
                         )
                 );
 
-        return new JwtResponse(
+        JwtResponse response =
+                new JwtResponse();
 
-                token,
+        response.setToken(token);
 
-                user.getUsername(),
+        response.setUserId(
+                user.getId()
+        );
 
+        response.setUsername(
+                user.getUsername()
+        );
+
+        response.setRole(
                 user.getRole()
                         .getName()
                         .name()
         );
+
+        return response;
+    }
+
+    /*
+     * Get user by username
+     */
+    public User getUserByUsername(
+            String username) {
+
+        return userRepository
+                .findByUsername(username)
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "User not found"
+                        )
+                );
+    }
+
+    /*
+     * Get user by ID
+     */
+    public User getUserById(
+            Long userId) {
+
+        return userRepository
+                .findById(userId)
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "User not found"
+                        )
+                );
+    }
+
+    /*
+     * Check username exists
+     */
+    public boolean existsByUsername(
+            String username) {
+
+        return userRepository
+                .existsByUsername(username);
+    }
+
+    /*
+     * Check email exists
+     */
+    public boolean existsByEmail(
+            String email) {
+
+        return userRepository
+                .existsByEmail(email);
     }
 }

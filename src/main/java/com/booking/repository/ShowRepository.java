@@ -1,12 +1,20 @@
 package com.booking.repository;
 
-import java.util.List;
+import com.booking.entity.Show;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.booking.entity.Show;
+import java.time.LocalDateTime;
+
+import java.util.List;
 
 public interface ShowRepository extends JpaRepository<Show, Long> {
 
-    List<Show> findByEventId(Long eventId);
+    List<Show> findByEventId(
+            Long eventId
+    );
+
+    List<Show> findByStartTimeAfter(
+            LocalDateTime time
+    );
 }

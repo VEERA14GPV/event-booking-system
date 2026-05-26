@@ -17,11 +17,9 @@ import java.time.Duration;
 public class CacheConfig {
 
     @Bean
-    public CacheManager cacheManager(
-            RedisConnectionFactory connectionFactory) {
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
-        RedisCacheConfiguration config =
-                RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration config =RedisCacheConfiguration.defaultCacheConfig()
 
                         // Cache TTL = 10 minutes
                         .entryTtl(Duration.ofMinutes(10))

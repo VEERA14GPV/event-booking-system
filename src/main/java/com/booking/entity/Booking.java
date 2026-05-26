@@ -1,6 +1,7 @@
 package com.booking.entity;
 
 import com.booking.enums.BookingStatus;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -13,7 +14,9 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "show_id")
@@ -28,39 +31,41 @@ public class Booking {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public User getUser() {
+        return user;
     }
 
     public Show getShow() {
         return show;
     }
 
-    public void setShow(Show show) {
-        this.show = show;
-    }
-
     public BookingStatus getStatus() {
         return status;
-    }
-
-    public void setStatus(BookingStatus status) {
-        this.status = status;
     }
 
     public LocalDateTime getBookingTime() {
         return bookingTime;
     }
 
-    public void setBookingTime(LocalDateTime bookingTime) {
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setShow(Show show) {
+        this.show = show;
+    }
+
+    public void setStatus(BookingStatus status) {
+        this.status = status;
+    }
+
+    public void setBookingTime(
+            LocalDateTime bookingTime) {
+
         this.bookingTime = bookingTime;
     }
 }

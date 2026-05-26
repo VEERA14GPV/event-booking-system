@@ -22,20 +22,22 @@ public class BookingSeat {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Booking getBooking() {
         return booking;
     }
 
-    public void setBooking(Booking booking) {
-        this.booking = booking;
-    }
-
     public Seat getSeat() {
         return seat;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setBooking(
+            Booking booking) {
+
+        this.booking = booking;
     }
 
     public void setSeat(Seat seat) {

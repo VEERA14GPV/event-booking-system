@@ -2,6 +2,7 @@ package com.booking.specification;
 
 import com.booking.entity.Event;
 import com.booking.enums.EventType;
+
 import org.springframework.data.jpa.domain.Specification;
 
 public class EventSpecification {
@@ -11,12 +12,18 @@ public class EventSpecification {
 
         return (root, query, criteriaBuilder) ->
 
-                city == null
-                        ? null
-                        : criteriaBuilder.equal(
-                                root.get("city"),
-                                city
-                );
+                city == null || city.isBlank()
+
+                        ? criteriaBuilder.conjunction()
+
+                        : criteriaBuilder.like(
+
+                                criteriaBuilder.lower(
+                                        root.get("city")
+                                ),
+
+                                "%" + city.toLowerCase() + "%"
+                        );
     }
 
     public static Specification<Event> hasLanguage(
@@ -24,12 +31,18 @@ public class EventSpecification {
 
         return (root, query, criteriaBuilder) ->
 
-                language == null
-                        ? null
-                        : criteriaBuilder.equal(
-                                root.get("language"),
-                                language
-                );
+                language == null || language.isBlank()
+
+                        ? criteriaBuilder.conjunction()
+
+                        : criteriaBuilder.like(
+
+                                criteriaBuilder.lower(
+                                        root.get("language")
+                                ),
+
+                                "%" + language.toLowerCase() + "%"
+                        );
     }
 
     public static Specification<Event> hasType(
@@ -38,36 +51,46 @@ public class EventSpecification {
         return (root, query, criteriaBuilder) ->
 
                 type == null
-                        ? null
+
+                        ? criteriaBuilder.conjunction()
+
                         : criteriaBuilder.equal(
                                 root.get("type"),
                                 type
-                );
+                        );
     }
 
-    public static Specification<Event> hasMinimumRating(
+    public static Specification<Event>
+    hasMinimumRating(
             Double rating) {
 
         return (root, query, criteriaBuilder) ->
 
                 rating == null
-                        ? null
-                        : criteriaBuilder.greaterThanOrEqualTo(
+
+                        ? criteriaBuilder.conjunction()
+
+                        : criteriaBuilder
+                        .greaterThanOrEqualTo(
                                 root.get("rating"),
                                 rating
-                );
+                        );
     }
 
-    public static Specification<Event> hasMaximumPrice(
+    public static Specification<Event>
+    hasMaximumPrice(
             Double price) {
 
         return (root, query, criteriaBuilder) ->
 
                 price == null
-                        ? null
-                        : criteriaBuilder.lessThanOrEqualTo(
+
+                        ? criteriaBuilder.conjunction()
+
+                        : criteriaBuilder
+                        .lessThanOrEqualTo(
                                 root.get("price"),
                                 price
-                );
+                        );
     }
 }

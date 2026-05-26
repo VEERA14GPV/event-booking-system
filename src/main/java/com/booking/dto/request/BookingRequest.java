@@ -7,13 +7,13 @@ import java.util.List;
 
 public class BookingRequest {
 
-    @NotNull(message = "User ID is required")
+    @NotNull(message ="User ID is required")
     private Long userId;
 
-    @NotNull(message = "Show ID is required")
+    @NotNull(message ="Show ID is required")
     private Long showId;
 
-    @NotEmpty(message = "Seat IDs cannot be empty")
+    @NotEmpty(message ="Seat IDs cannot be empty")
     private List<Long> seatIds;
 
     public BookingRequest() {
@@ -24,7 +24,8 @@ public class BookingRequest {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(
+            Long userId) {
 
         this.userId = userId;
     }
@@ -34,7 +35,8 @@ public class BookingRequest {
         return showId;
     }
 
-    public void setShowId(Long showId) {
+    public void setShowId(
+            Long showId) {
 
         this.showId = showId;
     }

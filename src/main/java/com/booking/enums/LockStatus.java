@@ -1,5 +1,10 @@
 package com.booking.enums;
 
-public class LockStatus {
+public enum LockStatus {
 
+    LOCKED,
+
+    EXPIRED,
+
+    RELEASED
 }

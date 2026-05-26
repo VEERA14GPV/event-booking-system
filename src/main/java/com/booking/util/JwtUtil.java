@@ -2,7 +2,11 @@ package com.booking.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+
 import io.jsonwebtoken.security.Keys;
+
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -11,52 +15,68 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY =
-            "mySecretKeymySecretKeymySecretKey123456";
+    @Value("${app.jwt.secret}")
+    private String jwtSecret;
 
-    private static final long EXPIRATION =
-            86400000;
+    @Value("${app.jwt.expiration}")
+    private long jwtExpiration;
 
-    private final SecretKey key =
-            Keys.hmacShaKeyFor(
-                    SECRET_KEY.getBytes()
-            );
+    /*
+     * Generate signing key
+     */
+    private SecretKey getSigningKey() {
 
-    public String generateToken(String username) {
+        return Keys.hmacShaKeyFor(
+                jwtSecret.getBytes()
+        );
+    }
+
+    /*
+     * Generate JWT token
+     */
+    public String generateToken(
+            String username) {
 
         Date now = new Date();
 
         Date expiryDate =
-                new Date(now.getTime() + EXPIRATION);
+                new Date(
+                        now.getTime()
+                                + jwtExpiration
+                );
 
         return Jwts.builder()
+
                 .subject(username)
+
                 .issuedAt(now)
+
                 .expiration(expiryDate)
-                .signWith(key)
+
+                .signWith(getSigningKey())
+
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    /*
+     * Extract username
+     */
+    public String getUsernameFromToken(
+            String token) {
 
-        Claims claims =
-                Jwts.parser()
-                        .verifyWith(key)
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
-
-        return claims.getSubject();
+        return getClaims(token)
+                .getSubject();
     }
 
-    public boolean validateToken(String token) {
+    /*
+     * Validate JWT token
+     */
+    public boolean validateToken(
+            String token) {
 
         try {
 
-            Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token);
+            getClaims(token);
 
             return true;
 
@@ -64,5 +84,22 @@ public class JwtUtil {
 
             return false;
         }
+    }
+
+    /*
+     * Parse JWT claims
+     */
+    private Claims getClaims(
+            String token) {
+
+        return Jwts.parser()
+
+                .verifyWith(getSigningKey())
+
+                .build()
+
+                .parseSignedClaims(token)
+
+                .getPayload();
     }
 }
