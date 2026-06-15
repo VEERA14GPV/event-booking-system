@@ -126,8 +126,52 @@ Integrated with Razorpay for secure payment processing.
 
 ## 📖 API Documentation
 
-* Swagger Integration
-* OpenAPI Documentation Support
+The application uses Swagger/OpenAPI for interactive API documentation and testing.
+
+### Swagger UI
+
+After starting the application, access Swagger UI at:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+### OpenAPI Specification
+
+```text
+http://localhost:8080/v3/api-docs
+```
+
+### Available API Modules
+
+* Authentication APIs
+* Event Management APIs
+* Show Management APIs
+* Seat Management APIs
+* Booking Management APIs
+* Payment APIs
+
+### Swagger Features
+
+* Interactive API Testing
+* Request/Response Documentation
+* JWT Secured Endpoint Testing
+* Endpoint Categorization
+* OpenAPI Specification Generation
+
+### Testing Secured APIs
+
+1. Register or Login using the Authentication APIs.
+2. Copy the JWT token returned by the login endpoint.
+3. Click the **Authorize** button in Swagger UI.
+4. Enter the token:
+
+```text
+Bearer <your-jwt-token>
+```
+
+5. Access protected endpoints directly from Swagger.
+
 
 ---
 
