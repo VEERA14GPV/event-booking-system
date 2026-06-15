@@ -1,8 +1,9 @@
 # 🎟️ Event Booking System
 
-A production-ready Event Booking System built using Spring Boot that enables secure event management, show scheduling, seat booking, payment processing, real-time seat updates, distributed locking, caching, and enterprise-grade API security mechanisms.
+An Event Booking System built using Spring Boot that enables event management, show scheduling, seat booking, payment processing, real-time seat updates, distributed locking, caching, and secure API access.
 
-The system is designed to handle concurrent booking requests efficiently while preventing double bookings through Redis-based distributed locking and providing real-time seat availability updates using WebSockets.
+The system is designed to handle concurrent booking requests efficiently by preventing double bookings through Redis-based distributed seat locking and providing real-time seat availability updates using WebSockets.
+
 
 ---
 
