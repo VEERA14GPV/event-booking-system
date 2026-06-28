@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: event-booking
+  labels:
+    app: backend
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: event-booking
+spec:
+  # ─────────────────────────────────────────────────────────────────────────
+  # IMPORTANT — WebSocket scaling caveat:
+  # Spring uses an in-memory STOMP broker. If you run > 1 replica, a
+  # WebSocket client connected to pod A will NOT receive messages broadcast
+  # from pod B. To scale horizontally you must add a Redis/RabbitMQ STOMP
+  # broker relay (MessageBrokerRegistry.enableStompBrokerRelay).
+  # Until then, keep replicas: 1 and let the HPA min=1 floor hold it there.
+  # ─────────────────────────────────────────────────────────────────────────
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0   # always keep at least 1 pod running during rollout
+  template:
+    metadata:
+      labels:
+        app: backend
+      annotations:
+        # Prometheus scrape annotations (if you have Prometheus in the cluster)
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8082"
+    spec:
+      terminationGracePeriodSeconds: 60   # matches server.shutdown=graceful
+
+      # Spread pods across different nodes when replicas > 1.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: ["backend"]
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: backend
+          image: YOUR_REGISTRY/event-booking-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+
+          # ── Environment from ConfigMap (non-sensitive) ─────────────────
+          envFrom:
+            - configMapRef:
+                name: app-config
+
+          # ── Sensitive values from Secrets ──────────────────────────────
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: jwt-secret
+            - name: RAZORPAY_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: razorpay-key-id
+            - name: RAZORPAY_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: razorpay-key-secret
+
+          # ── Resource sizing ────────────────────────────────────────────
+          # Request: guaranteed allocation; Limit: hard cap.
+          # With -XX:MaxRAMPercentage=75 the JVM uses ≤ 768 Mi of the 1Gi limit.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # ── Startup probe ──────────────────────────────────────────────
+          # Gives Spring Boot up to 3 minutes to start (18 × 10s) before
+          # liveness/readiness probes begin. Prevents premature restarts.
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 18   # 18 × 10s = 3 min total startup budget
+            timeoutSeconds: 5
+
+          # ── Liveness probe ─────────────────────────────────────────────
+          # Restarts the pod if the JVM is alive but deadlocked / hung.
+          # Uses the liveness group (db + redis + diskSpace).
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8082
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ── Readiness probe ────────────────────────────────────────────
+          # Removes the pod from the Service endpoints when it cannot serve
+          # traffic (e.g. DB or Redis temporarily unreachable).
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ── Lifecycle ──────────────────────────────────────────────────
+          # Give in-flight requests time to drain before the pod is killed.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

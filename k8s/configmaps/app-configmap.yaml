@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: event-booking
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: event-booking
+data:
+  # Spring profile activates application-prod.properties overrides
+  # (show-sql=false, logging reduced, swagger disabled, etc.)
+  SPRING_PROFILES_ACTIVE: "prod"
+
+  # ── MySQL ────────────────────────────────────────────────────
+  # DB_HOST points to the MySQL K8s Service name in this namespace.
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_USER: "booking_user"
+  # DB_PASSWORD comes from mysql-secret
+
+  # ── Redis ────────────────────────────────────────────────────
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+
+  # ── Elasticsearch ────────────────────────────────────────────
+  SPRING_ELASTICSEARCH_URIS: "http://elasticsearch:9200"
+
+  # ── JWT ──────────────────────────────────────────────────────
+  # JWT_SECRET comes from app-secret
+  JWT_EXPIRATION: "86400000"
+
+  # ── Seat / Booking timeouts ──────────────────────────────────
+  # Centralise here so all pods pick up the same value.
+  SEAT_LOCK_DURATION_MINUTES: "5"
+  BOOKING_EXPIRY_MINUTES: "10"

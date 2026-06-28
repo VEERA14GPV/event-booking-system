@@ -1,0 +1,56 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: event-booking
+  labels:
+    app: backend
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: event-booking
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WebSocket scaling note (see backend-deployment.yaml):
+  # minReplicas is set to 1 because the in-memory STOMP broker breaks with
+  # multiple pods. Raise minReplicas to 2+ only after adding a Redis/RabbitMQ
+  # STOMP broker relay so WebSocket messages are shared across all pods.
+  # ─────────────────────────────────────────────────────────────────────────
+  minReplicas: 1
+  maxReplicas: 5
+
+  metrics:
+    # Scale out when average CPU across all pods exceeds 60%
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+
+    # Scale out when average memory across all pods exceeds 70%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+  behavior:
+    scaleDown:
+      # Wait 5 minutes of sustained low load before scaling down
+      # to avoid flapping under bursty traffic.
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60

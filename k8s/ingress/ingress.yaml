@@ -1,0 +1,195 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# NGINX Ingress — routes all traffic for the event-booking domain.
+#
+# Prerequisites:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.0/deploy/static/provider/cloud/deploy.yaml
+#
+# Replace "booking.example.com" with your actual domain (or the LoadBalancer
+# IP for testing without a domain).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap to set custom headers for WebSocket upgrade on the /socket path.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: websocket-proxy-headers
+  namespace: event-booking
+data:
+  Upgrade:    "$http_upgrade"
+  Connection: "upgrade"
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Main Ingress — HTTP
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: event-booking-ingress
+  namespace: event-booking
+  labels:
+    app.kubernetes.io/part-of: event-booking
+  annotations:
+    # Use the NGINX Ingress Controller (installed separately)
+    kubernetes.io/ingress.class: "nginx"
+
+    # ── Proxy timeouts ────────────────────────────────────────────────────
+    # Long timeouts are REQUIRED for WebSocket (STOMP/SockJS) connections.
+    # SockJS keeps connections open; the default 60 s timeout kills them.
+    nginx.ingress.kubernetes.io/proxy-read-timeout:    "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout:    "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+
+    # ── WebSocket support ─────────────────────────────────────────────────
+    # The NGINX Ingress Controller handles Upgrade/Connection headers when
+    # it detects a WebSocket handshake; the long timeouts above are the
+    # critical part. The configuration-snippet below also applies them
+    # explicitly on the /socket location for certainty.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      location ~* ^/socket/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+      }
+
+    # ── Body size ─────────────────────────────────────────────────────────
+    # Allows file uploads up to 10 MB (matches application.properties).
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # ── Rate limiting (NGINX level) ───────────────────────────────────────
+    # Complements the application-level Bucket4j rate limiter.
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+
+    # ── CORS ─────────────────────────────────────────────────────────────
+    # Allow the frontend origin to reach API paths.
+    # Replace with your actual domain in production.
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://booking.example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Idempotency-Key"
+
+spec:
+  rules:
+    - host: booking.example.com     # ← CHANGE TO YOUR DOMAIN
+      http:
+        paths:
+          # ── Backend API paths ─────────────────────────────────────────
+          # Listed before the catch-all "/" so NGINX matches them first.
+
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /events
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /shows
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /seats
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /bookings
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /payments
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          # ── Actuator (keep internal; expose only health externally) ────
+          - path: /actuator
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          # ── Swagger (disable in prod via application-prod.properties) ──
+          - path: /v3/api-docs
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          - path: /swagger-ui
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          # ── WebSocket (STOMP/SockJS) ───────────────────────────────────
+          # Must match spring.websocket.path=/socket in application.properties.
+          # SockJS probes /socket/info and opens transport at /socket/{s}/{sess}/...
+          # Prefix matching covers all sub-paths.
+          - path: /socket
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8082
+
+          # ── Frontend SPA (catch-all) ───────────────────────────────────
+          # Must be last. React Router handles unknown paths client-side.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+  # ── TLS termination ────────────────────────────────────────────────────
+  # Uncomment after creating the TLS Secret (e.g. via cert-manager).
+  #
+  # Install cert-manager:
+  #   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+  #
+  # Then add to this Ingress:
+  #   annotations:
+  #     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  #
+  # tls:
+  #   - hosts:
+  #       - booking.example.com
+  #     secretName: event-booking-tls
