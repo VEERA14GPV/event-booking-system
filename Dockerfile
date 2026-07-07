@@ -35,13 +35,6 @@ USER appuser
 EXPOSE 8082
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-CMD curl -f http://localhost:${PORT:-8082}/actuator/health || exit 1
+  CMD curl -f http://localhost:${PORT:-8082}/actuator/health || exit 1
 
-ENTRYPOINT ["java",
-"-XX:+UseContainerSupport",
-"-XX:MaxRAMPercentage=75.0",
-"-XX:+ExitOnOutOfMemoryError",
-"-Djava.security.egd=file:/dev/./urandom",
-"-Dspring.devtools.restart.enabled=false",
-"-jar",
-"app.jar"]
+ENTRYPOINT ["java","-XX:+UseContainerSupport","-XX:MaxRAMPercentage=75.0","-XX:+ExitOnOutOfMemoryError","-Djava.security.egd=file:/dev/./urandom","-Dspring.devtools.restart.enabled=false","-jar","app.jar"]
