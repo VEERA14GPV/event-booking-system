@@ -166,6 +166,7 @@ public class AuthService {
         /*
          * Spring Security authentication process.
          *
+         *
          * Internally calls:
          *
          * AuthenticationManager
