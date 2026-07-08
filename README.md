@@ -386,9 +386,6 @@ Interactive seat map with real-time availability.
 ### Organizer Dashboard
 Manage events, shows, and bookings.
 
-### Admin Dashboard
-Monitor users, organizers, and platform activities.
-
 ---
 
 # 👨‍💻 Author
